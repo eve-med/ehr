@@ -21,6 +21,7 @@ class Doctor(BaseModel):
     specialty: str
 
 class Appointment(BaseModel):
+    id: str
     patient: Patient
     doctor: Doctor = None
     diagnosis: str

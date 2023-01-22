@@ -13,7 +13,7 @@ from ehr.utils import get_db_handle
 # to parse the incoming request.body as json
 import json
 from datetime import datetime
-
+from bson import json_util
 from django.http import JsonResponse
 
 
@@ -42,6 +42,10 @@ def create_or_list_appointments(request):
         response = []
         appointments = get_db_handle()['appointments'].find()
         for appointment in appointments:
+            appointment = json.loads(json_util.dumps(appointment))
+            appointment['id'] = appointment['_id']['$oid']
+            appointment['patient']['born'] = appointment['patient']['born']['$date']
+            appointment['create_date'] = appointment['create_date']['$date']
             response.append(json.loads(Appointment(**appointment).json()))
         return JsonResponse(response, safe=False)
 
