@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field, ValidationError, validator
 from datetime import datetime
+from doctors.models import Doctor
+from typing import List
 
 # Create your models here.
 class Patient(BaseModel):
@@ -13,15 +15,8 @@ class Patient(BaseModel):
         assert v.isalnum(), 'must be alphanumeric'
         return v
 
-class Doctor(BaseModel):
-    name: str
-    surname: str
-    born: int
-    dni: str
-    specialty: str
 
 class Appointment(BaseModel):
-    id: str
     patient: Patient
     doctor: Doctor = None
     diagnosis: str
@@ -31,6 +26,7 @@ class Appointment(BaseModel):
     admitted_by: str
     severity: int
 
+
 class AppointmentRequest(BaseModel):
     patient_dni: str
     doctor_id: str = None
@@ -38,3 +34,14 @@ class AppointmentRequest(BaseModel):
     diagnosis: str
     admitted_by: str
     severity: int
+
+
+class MedicalRecord(BaseModel):
+    patient: Patient
+    # store a list of all the appointments objects
+    appointments: List[Appointment]
+    '''
+    family_history: str
+    allergies: str
+    surgeries: str
+    '''
