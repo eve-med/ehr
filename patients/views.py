@@ -76,21 +76,20 @@ def create_or_list_appointments(request):
     if request.method == 'GET':
         response = []
         appointments = get_db_handle()['appointments'].find()
-        for appointment in appointments:
-            appointment = json.loads(json_util.dumps(appointment))
-            appointment_id = appointment['_id']['$oid']
-            appointment['patient']['born'] = appointment['patient']['born']['$date']
-            appointment['create_date'] = appointment['create_date']['$date']
-            appointment = Appointment(**appointment).dict()
-            appointment['id'] = appointment_id
+        for appointment_db in appointments:
+            appointment_db = json.loads(json_util.dumps(appointment_db))
+            appointment_db['patient']['born'] = appointment_db['patient']['born']['$date']
+            appointment_db['create_date'] = appointment_db['create_date']['$date']
+            appointment = Appointment(**appointment_db).dict()
+            appointment['id'] = appointment_db['_id']['$oid']
             response.append(appointment)
-
         return JsonResponse(response, safe=False)
 
     if request.method == 'POST':
+        print(request.body)
         appointmentRequest = AppointmentRequest(**json.loads(request.body)).dict()
         # if there is a doctor_id in the appointment, get the doctor and add it to the appointment
-        patient = get_db_handle()['patients'].find_one({'dni': appointmentRequest['patient_dni']})
+        patient = get_db_handle()['patients'].find_one({'_id': ObjectId(appointmentRequest['patient_id'])})
         if not patient:
             return HttpResponse("Patient not found")
         appointment = Appointment(
@@ -149,9 +148,3 @@ def medical_record(request, patient_id):
         get_db_handle()['records'].update_one({"patient.id": patient_id}, {'$push': {'appointments': appointment.dict()}})
 
         return HttpResponse("Appointment added to medical record")
-
-
-
-# NO PODER CREAR MAS DE UN MEDICAL RECORD POR USUARIO
-# ARREGLAR APPOINTMENT NO PODER AGREGAR CON UN ID RANDOM Y QUE NO LO AGREGUE A LA DB
-# SI NO TENGO EL EXPORT QUE NO LEVANTE EL SERVER

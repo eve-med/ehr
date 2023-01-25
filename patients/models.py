@@ -28,6 +28,7 @@ class Appointment(BaseModel):
 
 
 class AppointmentRequest(BaseModel):
+    patient_id: str
     doctor_id: str = None
     specialty: str
     diagnosis: str
