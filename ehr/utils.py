@@ -7,6 +7,8 @@ from pymongo import MongoClient
 def get_db_handle():
     # Use VAULT instead of ENV variables
     MONGO_CONN_STRING = os.environ.get('MONGO_CONN_STRING')
+    if not MONGO_CONN_STRING:
+        raise ValueError('mongo connection string not set')
     # Mongo client with connection string
     client = MongoClient(MONGO_CONN_STRING)
     # Connect to the database
@@ -21,6 +23,8 @@ def search_cdi_api(query):
     # Use VAULT instead of ENV variables
     client_id = os.getenv('CLIENT_ID')
     client_secret = os.getenv('CLIENT_SECRET')
+    if client_id is None or client_secret is None:
+        raise ValueError('client_id or client_secret not set')
 
     authorization_header = 'Basic ' +  base64.b64encode((client_id + ':' + client_secret).encode('ascii')).decode('utf-8')
     scope = 'icdapi_access'
