@@ -115,59 +115,43 @@ def medical_record(request, patient_id):
         if not medical_record:
             return HttpResponse("Medical record not found")
         medical_record = json.loads(json_util.dumps(medical_record))
-        print(medical_record)
         return JsonResponse(medical_record, safe=False)
 
     if request.method == 'POST':
-        request_appointment_id = json.loads(request.body.decode('utf-8'))
-        appointment_id = request_appointment_id['appointment_id']
-
-        appointment = get_db_handle()['appointments'].find_one({'_id': ObjectId(appointment_id)})
-        print(appointment)
-        if not appointment:
-            return HttpResponse("Appointment not found")
-
-        appointment = json.loads(json_util.dumps(appointment))
-        print(appointment)
-        appointment_id = appointment['_id']['$oid']
-        appointment['patient']['born'] = appointment['patient']['born']['$date']
-        appointment['create_date'] = appointment['create_date']['$date']
-        appointment = Appointment(**appointment).dict()
-        appointment['id'] = appointment_id
-
-        print()
-        print()
-        print(appointment)
-        medical_record = get_db_handle()['records'].find_one({'patient._id': ObjectId(appointment_id)})
+        # get patient
+        medical_record = get_db_handle()['records'].find_one({"patient.id": patient_id})
+        patient = medical_record['patient']
         
+        if not patient:
+            return HttpResponse("Patient not found")
+        
+        # create appointment
+        appointmentRequest = AppointmentRequest(**json.loads(request.body)).dict()
+        appointment = Appointment(
+            patient=patient,
+            doctor=None,
+            diagnosis=appointmentRequest['diagnosis'],
+            create_date=datetime.now(),
+            appointment_date=None,
+            admitted_by=appointmentRequest['admitted_by'],
+            severity=appointmentRequest['severity'],
+            specialty=appointmentRequest['specialty']
+            )
+
+        # add appointment to medical record
         if not medical_record:
             return HttpResponse("Medical record not found")
 
         medical_record = json.loads(json_util.dumps(medical_record))
-        medical_record['appointments'].append(appointment)
-        medical_record['id'] = medical_record['_id']['$oid']
-        medical_record = MedicalRecord(**medical_record).dict()
+        medical_record['appointments'].append(appointment.dict())
+        print(appointment.dict)
 
-        # update only the appointments array
-        get_db_handle()['records'].update_one({'_id': ObjectId(medical_record['_id'])}, {'$set': {'appointments': medical_record['appointments']}})
-        
+        get_db_handle()['records'].update_one({"patient.id": patient_id}, {'$push': {'appointments': appointment.dict()}})
+
         return HttpResponse("Appointment added to medical record")
 
 
 
-'''
-@csrf_exempt
-def get_patient_by_id(request, patient_id):
-    if request.method == 'GET':
-        patient = get_db_handle()['patients'].find_one({'_id': ObjectId(patient_id)})
-        print(patient)
-        patient = json.loads(json_util.dumps(patient))
-        patient['born'] = patient['born']['$date']
-        patient['_id'] = patient['_id']['$oid']
-        return JsonResponse(patient, safe=False)
-'''
-
 # NO PODER CREAR MAS DE UN MEDICAL RECORD POR USUARIO
-# DEVOLVER BIEN EL MEDICAL RECORD
 # ARREGLAR APPOINTMENT NO PODER AGREGAR CON UN ID RANDOM Y QUE NO LO AGREGUE A LA DB
 # SI NO TENGO EL EXPORT QUE NO LEVANTE EL SERVER
